@@ -14,7 +14,9 @@ class TextRecognizerPainter extends CustomPainter {
       this.boxRightOff = 4,
       this.boxTopOff = 2,
       this.getRawData,
-      this.paintboxCustom});
+      this.paintboxCustom,
+      this.onPaintCompleted
+      });
 
   /// ML kit recognizer
   final RecognizedText recognizedText;
@@ -49,8 +51,11 @@ class TextRecognizerPainter extends CustomPainter {
   /// Get raw data from scanned image
   final Function? getRawData;
 
-  /// Narower box paint
+  /// Narrower box paint
   final Paint? paintboxCustom;
+
+  /// onPaintCompleted callback
+  final Function? onPaintCompleted;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -70,25 +75,35 @@ class TextRecognizerPainter extends CustomPainter {
     var currentXOffset = offset.dx * siz1;
     var currentYOffset = offset.dy * siz;
 
+    var rawLeft = (currentScannerBoxWidth / boxLeftOff) + currentXOffset;
+    var rawTop = (currentScannerBoxHeight / boxTopOff) + currentYOffset;
+    var rawRight = (currentScannerBoxWidth + currentXOffset) -
+        (currentScannerBoxWidth / boxRightOff);
+    var rawBottom = (currentScannerBoxHeight + currentYOffset) -
+        (currentScannerBoxHeight / boxBottomOff);
+
+    if (onPaintCompleted != null) {
+      final boundingBox = Rect.fromLTRB(rawLeft, rawTop, rawRight, rawBottom);
+      onPaintCompleted!(boundingBox);
+    }
+
     final boxLeft = translateX(
-        (currentScannerBoxWidth / boxLeftOff) + currentXOffset,
+        rawLeft,
         rotation,
         size,
         absoluteImageSize);
     final boxTop = translateY(
-        (currentScannerBoxHeight / boxTopOff) + currentYOffset,
+        rawTop,
         rotation,
         size,
         absoluteImageSize);
     final boxRight = translateX(
-        (currentScannerBoxWidth + currentXOffset) -
-            (currentScannerBoxWidth / boxRightOff),
+        rawRight,
         rotation,
         size,
         absoluteImageSize);
     final boxBottom = translateY(
-        (currentScannerBoxHeight + currentYOffset) -
-            (currentScannerBoxHeight / boxBottomOff),
+        rawBottom,
         rotation,
         size,
         absoluteImageSize);
@@ -98,6 +113,7 @@ class TextRecognizerPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromARGB(153, 102, 160, 241));
+
     canvas.drawRect(
       Rect.fromLTRB(boxLeft, boxTop, boxRight, boxBottom),
       paintbox,
@@ -112,10 +128,13 @@ class TextRecognizerPainter extends CustomPainter {
               (textBlock.boundingBox.top), rotation, size, absoluteImageSize);
           final right = translateX(
               (textBlock.boundingBox.right), rotation, size, absoluteImageSize);
+          final bottom = translateY(
+              (textBlock.boundingBox.bottom), rotation, size, absoluteImageSize);
 
           if (left >= boxLeft &&
               right <= boxRight &&
               (top >= (boxTop + 15) && top <= (boxBottom - 20))) {
+            // (top >= (boxTop + 15) && bottom <= (boxBottom - 20))) {
             textBlocks.add(textBlock);
 
             var parsedText = textBlock.text;

@@ -85,6 +85,8 @@ class ScalableOCRState extends State<ScalableOCR> {
   String convertingAmount = "";
   get cameraController => _controller;
 
+  Rect boundingBox = Rect.zero;
+
   @override
   void initState() {
     super.initState();
@@ -142,33 +144,26 @@ class ScalableOCRState extends State<ScalableOCR> {
                 height:
                     widget.boxHeight ?? MediaQuery.of(context).size.height / 5,
                 key: cameraPrev,
-                child: AspectRatio(
-                  aspectRatio: 1 / previewAspectRatio,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    child: ClipRRect(
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(16.0)),
-                      child: Transform.scale(
-                        scale: cameraController.value.aspectRatio /
-                            previewAspectRatio,
-                        child: Center(
-                          child: CameraPreview(cameraController, child:
-                              LayoutBuilder(builder: (BuildContext context,
-                                  BoxConstraints constraints) {
-                            maxWidth = constraints.maxWidth;
-                            maxHeight = constraints.maxHeight;
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  child: ClipRRect(
+                    borderRadius:
+                        const BorderRadius.all(Radius.circular(16.0)),
+                    child: Center(
+                      child: CameraPreview(cameraController, child:
+                          LayoutBuilder(builder: (BuildContext context,
+                              BoxConstraints constraints) {
+                        maxWidth = constraints.maxWidth;
+                        maxHeight = constraints.maxHeight;
 
-                            return GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onScaleStart: _handleScaleStart,
-                              onScaleUpdate: _handleScaleUpdate,
-                              onTapDown: (TapDownDetails details) =>
-                                  onViewFinderTap(details, constraints),
-                            );
-                          })),
-                        ),
-                      ),
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onScaleStart: _handleScaleStart,
+                          onScaleUpdate: _handleScaleUpdate,
+                          onTapDown: (TapDownDetails details) =>
+                              onViewFinderTap(details, constraints),
+                        );
+                      })),
                     ),
                   ),
                 ),
@@ -353,7 +348,12 @@ class ScalableOCRState extends State<ScalableOCR> {
           boxTopOff: widget.boxTopOff,
           boxRightOff: widget.boxRightOff,
           boxLeftOff: widget.boxRightOff,
-          paintboxCustom: widget.paintboxCustom);
+          paintboxCustom: widget.paintboxCustom,
+          onPaintCompleted: (Rect boundingBox) {
+            this.boundingBox = boundingBox;
+            print(this.boundingBox);
+          }
+      );
 
       customPaint = CustomPaint(painter: painter);
     } else {
