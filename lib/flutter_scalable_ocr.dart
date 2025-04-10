@@ -85,7 +85,8 @@ class ScalableOCRState extends State<ScalableOCR> {
   String convertingAmount = "";
   get cameraController => _controller;
 
-  Rect boundingBox = Rect.zero;
+  Rect previewBoundingBox = Rect.zero;
+  Size previewImageSize = Size.zero;
 
   @override
   void initState() {
@@ -192,13 +193,18 @@ class ScalableOCRState extends State<ScalableOCR> {
   // Start camera stream function
   Future startLiveFeed() async {
     _cameras = await availableCameras();
-    _controller = CameraController(
-        _cameras[widget.cameraSelection], ResolutionPreset.max);
+    // _controller = CameraController(
+    //     _cameras[widget.cameraSelection], ResolutionPreset.max);
+    // Print the cameras available
+    for (final camera in _cameras) {
+      print('Available Camera: ${camera.name}');
+    }
     final camera = _cameras[widget.cameraSelection];
     _controller = CameraController(
       camera,
       ResolutionPreset.high,
       enableAudio: false,
+      // fps: 20,
     );
     _controller?.initialize().then((_) {
       if (!mounted) {
@@ -253,6 +259,8 @@ class ScalableOCRState extends State<ScalableOCR> {
 
     final Size imageSize =
         Size(image.width.toDouble(), image.height.toDouble());
+    // print(imageSize);
+    previewImageSize = imageSize;
 
     final camera = _cameras[0];
     final imageRotation =
@@ -326,7 +334,7 @@ class ScalableOCRState extends State<ScalableOCR> {
     if (_isBusy) return;
     _isBusy = true;
 
-    final recognizedText = await _textRecognizer.processImage(inputImage);
+    final recognizedText = RecognizedText(text: "", blocks: []); //await _textRecognizer.processImage(inputImage);
     if (inputImage.metadata?.size != null &&
         inputImage.metadata?.rotation != null &&
         cameraPrev.currentContext != null) {
@@ -350,8 +358,8 @@ class ScalableOCRState extends State<ScalableOCR> {
           boxLeftOff: widget.boxRightOff,
           paintboxCustom: widget.paintboxCustom,
           onPaintCompleted: (Rect boundingBox) {
-            this.boundingBox = boundingBox;
-            print(this.boundingBox);
+            this.previewBoundingBox = boundingBox;
+            // print(this.boundingBox);
           }
       );
 
